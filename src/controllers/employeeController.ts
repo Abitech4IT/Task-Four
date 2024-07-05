@@ -16,7 +16,7 @@ export const getAllEmployees = async (
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "employees fetch successfully",
       data: employees,
@@ -42,7 +42,7 @@ export const getEmployee = async (
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "employee retrieved successfully",
       data: employeeData,
@@ -78,7 +78,7 @@ export const createEmployee = async (
       mobile: req.body.mobile,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Employee created successfully!",
       data: newEmployee,
@@ -111,7 +111,7 @@ export const updateEmployee = async (
       runValidators: true,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Employee updated successfully!",
       data: updatedEmployee,
@@ -136,7 +136,7 @@ export const deleteEmployee = async (
     }
     await Employee.findByIdAndDelete(id);
 
-    res.status(204).json({
+    return res.status(204).json({
       success: true,
       message: "Employee deleted successfully!",
     });
