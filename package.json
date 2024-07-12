@@ -4,7 +4,9 @@
   "description": "Uptick Talent - Task Four",
   "main": "app.js",
   "scripts": {
-    "dev": "nodemon ./src/server.ts"
+    "dev": "nodemon ./src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
   },
   "author": "Abitech",
   "license": "ISC",
