@@ -27,6 +27,12 @@ const employeeSchema = new mongoose.Schema({
     type: String,
     require: true,
   },
+  image: {
+    type: String,
+  },
+  imageUrl: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     default: Date.now(),

@@ -5,11 +5,12 @@ import {
   getAllEmployees,
   getEmployee,
   updateEmployee,
+  uploadImage,
 } from "../controllers/employeeController";
 
 const router = express.Router();
 
-router.route("/").get(getAllEmployees).post(createEmployee);
+router.route("/").get(getAllEmployees).post(uploadImage, createEmployee);
 
 router
   .route("/:id")

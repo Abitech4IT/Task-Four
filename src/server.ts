@@ -1,6 +1,7 @@
-import app from "./app";
-import mongoose from "mongoose";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
+
+import app from "./app";
 
 // const DB_URL: string =
 //   process.env.DB_URL ||
