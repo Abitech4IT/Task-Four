@@ -12,40 +12,11 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { Employee } from "../model/employeeModel";
 import { EmployeeReqBody } from "types";
+import { getOrSetCache } from "../util/redisCache";
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 export const uploadImage = upload.single("image");
-
-export const getAllEmployees = async (
-  req: express.Request,
-  res: express.Response
-) => {
-  try {
-    const employees = await Employee.find();
-
-    if (!employees) {
-      return res.status(404).json({
-        success: false,
-        message: "employees not found",
-      });
-    }
-
-    for (const employee of employees) {
-      employee.imageUrl =
-        "https://d28ybdxz53ziu.cloudfront.net/" + employee.image;
-      // employee.imageUrl = (process.env.IMAGE_URL as string) + employee.image;
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "employees fetch successfully",
-      data: employees,
-    });
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-};
 
 // export const getAllEmployees = async (
 //   req: express.Request,
@@ -54,68 +25,85 @@ export const getAllEmployees = async (
 //   try {
 //     const employees = await Employee.find();
 
-//     if (!employees || employees.length === 0) {
+//     if (!employees) {
 //       return res.status(404).json({
 //         success: false,
-//         message: "No employees found",
+//         message: "employees not found",
 //       });
 //     }
 
-//     const bucketName = process.env.BUCKET_NAME;
-//     const bucketRegion = process.env.BUCKET_REGION;
-//     const accessKey = process.env.ACCESS_KEY;
-//     const secretKey = process.env.SECRET_ACCESS_KEY;
-
-//     if (!bucketName || !bucketRegion || !accessKey || !secretKey) {
-//       throw new Error("Missing S3 configuration. Check environment variables.");
+//     for (const employee of employees) {
+//       employee.imageUrl =
+//         "https://d28ybdxz53ziu.cloudfront.net/" + employee.image;
+//       // employee.imageUrl = (process.env.IMAGE_CDN as string) + employee.image;
 //     }
-
-//     const s3 = new S3Client({
-//       credentials: {
-//         accessKeyId: accessKey,
-//         secretAccessKey: secretKey,
-//       },
-//       region: bucketRegion,
-//     });
-
-//     const signedUrlPromises = employees.map(async (employee) => {
-//       if (!employee.image) {
-//         console.warn(`Employee ${employee._id} has no image`);
-//         return employee;
-//       }
-
-//       const getObjectParams = {
-//         Bucket: bucketName,
-//         Key: employee.image,
-//       };
-
-//       try {
-//         const command = new GetObjectCommand(getObjectParams);
-//         const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
-//         employee.imageUrl = url;
-//       } catch (error) {
-//         console.error(
-//           `Error generating signed URL for employee ${employee._id}:`,
-//           error
-//         );
-//         employee.imageUrl = null; // or some default value
-//       }
-
-//       return employee;
-//     });
-
-//     const updatedEmployees = await Promise.all(signedUrlPromises);
 
 //     return res.status(200).json({
 //       success: true,
-//       message: "Employees fetched successfully",
-//       data: updatedEmployees,
+//       message: "employees fetch successfully",
+//       data: employees,
 //     });
 //   } catch (error: any) {
-//     console.error("Error in getAllEmployees:", error);
-//     res.status(500).json({ success: false, error: error.message });
+//     res.status(400).json({ error: error.message });
 //   }
 // };
+
+export const getAllEmployees = async (
+  req: express.Request,
+  res: express.Response
+) => {
+  try {
+    const employees = await Employee.find();
+
+    if (!employees || employees.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No employees found",
+      });
+    }
+
+    const s3 = new S3Client({
+      credentials: {
+        accessKeyId: process.env.ACCESS_KEY!,
+        secretAccessKey: process.env.SECRET_ACCESS_KEY!,
+      },
+      region: process.env.BUCKET_REGION!,
+    });
+
+    const updatedEmployees = await Promise.all(
+      employees.map(async (employee) => {
+        if (!employee.image) {
+          return employee;
+        }
+
+        const cacheKey = `image_url:${employee.image}`;
+
+        employee.imageUrl = await getOrSetCache(
+          cacheKey,
+          async () => {
+            const command = new GetObjectCommand({
+              Bucket: process.env.BUCKET_NAME!,
+              Key: process.env.IMAGE_CDN! + employee.image,
+            });
+            return getSignedUrl(s3, command, { expiresIn: 3600 });
+          },
+          3600 // Cache for 1 hour
+        );
+
+        return employee;
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Employees fetched successfully",
+      data: updatedEmployees,
+    });
+  } catch (error: any) {
+    console.error("Error in getAllEmployees:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
 
 export const getEmployee = async (
   req: express.Request,
