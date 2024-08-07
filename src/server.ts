@@ -21,7 +21,7 @@ if (process.env.NODE_ENV !== "PRODUCTION") {
 }
 
 //Connect DB
-const DB_URL: string = process.env.DB_URL ?? "";
+const DB_URL: string = process.env.DB_URL!;
 
 if (!DB_URL) {
   throw new Error("Database URL not provided in environment variables");

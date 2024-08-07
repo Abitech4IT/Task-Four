@@ -1,4 +1,7 @@
 import Redis from "ioredis";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 // import { createClient } from "redis";
 // const redisClient = new Redis({
@@ -10,9 +13,9 @@ import Redis from "ioredis";
 // });
 
 const redisClient = new Redis({
-  host: process.env.REDIS_HOST,
-  port: parseInt(process.env.REDIS_PORT || "6379"),
-  password: process.env.REDIS_PASSWORD,
+  host: process.env.REDIS_HOST!,
+  port: parseInt(process.env.REDIS_PORT!),
+  password: process.env.REDIS_PASSWORD!,
 });
 
 redisClient.on("error", (err) => console.log("Redis Client Error", err));
